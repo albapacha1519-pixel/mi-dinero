@@ -1,0 +1,507 @@
+Aquí tienes el código completo rediseñado para que la pestaña principal ("Inicio") sea una réplica exacta de la interfaz que muestras en la imagen, manteniendo intacta toda la funcionalidad de meses, ingresos y gastos que ya habíamos programado.
+He convertido el menú antiguo en una **barra de navegación inferior** (estilo app móvil real) y he conectado todos los cálculos matemáticos a las nuevas tarjetas visuales.
+Sustituye todo tu archivo por este:
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mi Bolsillo</title>
+  <style>
+    :root {
+      --bg-app: #FAFAF7;
+      --card-bg: #FFFFFF;
+      --text-main: #333132;
+      --text-muted: #8F8C8D;
+      
+      --gradient-main: linear-gradient(135deg, #EFC8CD 0%, #DFD2ED 50%, #EBD5DF 100%);
+      --gradient-green: linear-gradient(135deg, #E7F0DF 0%, #F2F4EB 100%);
+      --progress-bg: #F0EEEB;
+      --progress-fill: #E3DADB;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding-bottom: 80px; 
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* HEADER APP */
+    .top-header { padding: 24px 20px 10px 20px; }
+    .app-subtitle {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .month-header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .month-title {
+      font-size: 32px;
+      font-family: "Georgia", serif; /* Estilo elegante para el mes */
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .month-nav-btn {
+      background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer;
+    }
+    .icon-refresh { color: var(--text-muted); font-size: 18px; }
+
+    /* CONTENEDOR DE PESTAÑAS */
+    .tab-content { display: none; padding: 0 20px; }
+    .tab-content.active { display: block; }
+
+    /* TARJETA PRINCIPAL (Dinero Disponible) */
+    .hero-card {
+      background: var(--gradient-main);
+      border-radius: 24px;
+      padding: 24px;
+      margin-top: 16px;
+      margin-bottom: 20px;
+    }
+    .hero-label { font-size: 13px; color: rgba(50,40,40,0.7); margin-bottom: 8px; font-weight: 500;}
+    .hero-amount { font-size: 38px; font-weight: 800; color: #322A2C; margin-bottom: 8px; letter-spacing: -1px;}
+    .hero-sub { font-size: 12px; color: rgba(50,40,40,0.6); }
+
+    /* GRID 2x2 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+    .stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500;}
+    .stat-val { font-size: 18px; font-weight: 700; color: var(--text-main);}
+
+    /* SECCIÓN "TU MES" */
+    .section-title {
+      font-size: 22px;
+      font-family: "Georgia", serif;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .progress-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; font-weight: 500;}
+    .progress-header .bold { font-weight: 700; font-size: 14px;}
+    .progress-bar-bg {
+      background: var(--progress-bg);
+      height: 8px;
+      border-radius: 4px;
+      width: 100%;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      background: var(--progress-fill);
+      height: 100%;
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-sub { font-size: 12px; color: var(--text-muted); }
+
+    .daily-card {
+      background: var(--gradient-green);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .daily-label { font-size: 13px; color: rgba(50,60,40,0.7); margin-bottom: 4px; font-weight: 500;}
+    .daily-val { font-size: 24px; font-weight: 800; color: #2D3328; margin-bottom: 4px;}
+    .daily-sub { font-size: 12px; color: rgba(50,60,40,0.6); }
+
+    /* MENÚ INFERIOR */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: space-around;
+      padding: 12px 10px 24px 10px;
+      border-top: 1px solid #F0EEEB;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #B5B2B3;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .nav-item.active { color: var(--text-main); font-weight: 700; }
+    .nav-icon { font-size: 20px; }
+
+    /* ESTILOS REAPROVECHADOS PARA OTRAS PESTAÑAS (Fijos, Historial) */
+    .list-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; margin-top: 20px;}
+    .item-row { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--card-bg); border-radius: 16px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);}
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #EAEAEA; background: var(--card-bg); font-size: 15px; outline: none; }
+    .btn-pink { background: var(--gradient-main); color: #322A2C; width: 100%; padding: 16px; border: none; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;}
+    .mini-form { display: flex; gap: 6px; margin-top: 12px; margin-bottom: 24px;}
+    .mini-form input { padding: 12px; border-radius: 12px; border: 1px solid #EAEAEA; font-size: 14px; }
+    .mini-form input[type="text"] { flex: 1; }
+    .mini-form input[type="number"] { width: 90px; }
+    .mini-form button { padding: 0 16px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 20px; background:#EFECE6; color:#333;}
+    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+    .action-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER GLOBAL -->
+  <div class="top-header">
+    <div class="app-subtitle">MI BOLSILLO</div>
+    <div class="month-header-container">
+      <div class="month-title">
+        <button class="month-nav-btn" onclick="cambiarMes(-1)">&#8249;</button>
+        <span id="textoMes">Septiembre</span>
+        <button class="month-nav-btn" onclick="cambiarMes(1)">&#8250;</button>
+      </div>
+      <div class="icon-refresh">↻</div>
+    </div>
+  </div>
+
+  <!-- PESTAÑA 1: INICIO (Diseño imagen) -->
+  <div id="tab-inicio" class="tab-content active">
+    
+    <div class="hero-card">
+      <div class="hero-label">Dinero disponible</div>
+      <div class="hero-amount" id="uiDineroDisponible">0,00 €</div>
+      <div class="hero-sub">Después de gastos y ahorro reservado</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Ingresos</div>
+        <div class="stat-val" id="uiIngresos">0,00 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Gastos</div>
+        <div class="stat-val" id="uiGastos">0,00 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Fijos</div>
+        <div class="stat-val" id="uiFijos">0,00 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Ahorro</div>
+        <div class="stat-val" id="uiAhorro">0,00 €</div>
+      </div>
+    </div>
+
+    <div class="section-title">
+      Tu mes <span>🌻</span>
+    </div>
+
+    <div class="progress-card">
+      <div class="progress-header">
+        <span>Presupuesto variable restante</span>
+        <span class="bold" id="uiPresupuestoBase">0,00 €</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="uiProgressBar"></div>
+      </div>
+      <div class="progress-sub" id="uiProgressText">0,00 € de 0,00 € utilizados.</div>
+    </div>
+
+    <div class="daily-card">
+      <div class="daily-label" id="uiTituloDiario">Puedes gastar</div>
+      <div class="daily-val" id="uiDiario">0,00 € / día</div>
+      <div class="daily-sub" id="uiSemanal">0,00 € / semana</div>
+    </div>
+
+  </div>
+
+  <!-- PESTAÑA 2: MOVIMIENTOS (Historial y añadir gasto) -->
+  <div id="tab-movimientos" class="tab-content">
+    <div class="list-title">Añadir Gasto</div>
+    <form id="formGasto">
+      <div class="form-group">
+        <label>Importe (€)</label>
+        <input type="number" id="gastoMonto" step="0.01" placeholder="Ej. 4.50" required>
+      </div>
+      <div class="form-group">
+        <label>Nota o Categoría</label>
+        <input type="text" id="gastoNota" placeholder="Ej. Comida supermercado" required>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="gastoFecha" required>
+      </div>
+      <button type="submit" class="btn-pink">Guardar Movimiento</button>
+    </form>
+
+    <div class="list-title" id="tituloHistorial">Movimientos del Mes</div>
+    <div id="listaGastos"></div>
+  </div>
+
+  <!-- PESTAÑA 3: PRESUPUESTO Y AHORRO (Ajustes Fijos) -->
+  <div id="tab-presupuesto" class="tab-content">
+    <div class="list-title">Ingresos Mensuales</div>
+    <div id="listaIngresos"></div>
+    <form id="formIngreso" class="mini-form">
+      <input type="text" id="nombreIngreso" placeholder="Ej. Nómina" required>
+      <input type="number" id="montoIngreso" step="0.01" placeholder="€" required>
+      <button type="submit">+</button>
+    </form>
+
+    <div class="list-title">Gastos Fijos Mensuales</div>
+    <div id="listaGastosFijos"></div>
+    <form id="formFijo" class="mini-form">
+      <input type="text" id="nombreFijo" placeholder="Ej. Alquiler" required>
+      <input type="number" id="montoFijo" step="0.01" placeholder="€" required>
+      <button type="submit">+</button>
+    </form>
+
+    <div class="list-title">Meta de Ahorro Reservado</div>
+    <div class="mini-form">
+      <input type="number" id="inputAhorro" step="0.01" placeholder="Ej. 100">
+      <button onclick="guardarAhorro()" style="font-size:14px;">Guardar</button>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN INFERIOR ESTILO APP -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('inicio', this)">
+      <span class="nav-icon">⌂</span> Inicio
+    </button>
+    <button class="nav-item" onclick="switchTab('movimientos', this)">
+      <span class="nav-icon">≣</span> Movimientos
+    </button>
+    <button class="nav-item" onclick="switchTab('presupuesto', this)">
+      <span class="nav-icon">⚙️</span> Presupuesto
+    </button>
+  </div>
+
+  <script>
+    // ESTADO Y MIGRACIÓN
+    let state = JSON.parse(localStorage.getItem('app_presupuesto_v3')) || {};
+    if (!state.ingresosList) state.ingresosList = [];
+    if (!state.gastosFijosList) state.gastosFijosList = [];
+    state.ahorro = parseFloat(state.ahorro) || 0;
+    state.gastos = state.gastos || [];
+
+    const mesesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    let fechaActualReal = new Date();
+    let mesVista = fechaActualReal.getMonth(); 
+    let anoVista = fechaActualReal.getFullYear();
+
+    document.getElementById('gastoFecha').valueAsDate = fechaActualReal;
+
+    function saveState() {
+      localStorage.setItem('app_presupuesto_v3', JSON.stringify(state));
+      render();
+    }
+
+    function switchTab(tabId, btnElement) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      if(btnElement) btnElement.classList.add('active');
+      window.scrollTo(0,0);
+    }
+
+    function cambiarMes(salto) {
+      mesVista += salto;
+      if (mesVista > 11) { mesVista = 0; anoVista++; }
+      else if (mesVista < 0) { mesVista = 11; anoVista--; }
+      
+      let nuevaFecha = new Date(anoVista, mesVista, 1);
+      if(mesVista === fechaActualReal.getMonth() && anoVista === fechaActualReal.getFullYear()){
+          nuevaFecha = fechaActualReal;
+      }
+      document.getElementById('gastoFecha').valueAsDate = nuevaFecha;
+      render();
+    }
+
+    function render() {
+      // Cabecera mes
+      document.getElementById('textoMes').innerText = mesesNombres[mesVista];
+      
+      const gastosDelMes = state.gastos.filter(g => {
+        const fechaGasto = new Date(g.fecha);
+        return fechaGasto.getMonth() === mesVista && fechaGasto.getFullYear() === anoVista;
+      });
+
+      // Cálculos Matemáticos
+      const totalIngresos = state.ingresosList.reduce((acc, item) => acc + item.monto, 0);
+      const totalFijos = state.gastosFijosList.reduce((acc, item) => acc + item.monto, 0);
+      const totalGastado = gastosDelMes.reduce((acc, item) => acc + item.monto, 0);
+      
+      const presupuestoBaseVariable = totalIngresos - totalFijos - state.ahorro; // Lo que queda para gastar en el mes tras fijos
+      const dineroDisponible = presupuestoBaseVariable - totalGastado; // Lo que queda AHORA
+      
+      // Actualizar GRID 2x2
+      document.getElementById('uiIngresos').innerText = `${totalIngresos.toFixed(2).replace('.',',')} €`;
+      document.getElementById('uiGastos').innerText = `${totalGastado.toFixed(2).replace('.',',')} €`;
+      document.getElementById('uiFijos').innerText = `${totalFijos.toFixed(2).replace('.',',')} €`;
+      document.getElementById('uiAhorro').innerText = `${state.ahorro.toFixed(2).replace('.',',')} €`;
+
+      // Actualizar Hero (Dinero Disponible)
+      document.getElementById('uiDineroDisponible').innerText = `${dineroDisponible.toFixed(2).replace('.',',')} €`;
+
+      // Barra de progreso "Tu mes"
+      document.getElementById('uiPresupuestoBase').innerText = `${presupuestoBaseVariable.toFixed(2).replace('.',',')} €`;
+      document.getElementById('uiProgressText').innerText = `${totalGastado.toFixed(2).replace('.',',')} € de ${presupuestoBaseVariable.toFixed(2).replace('.',',')} € utilizados.`;
+      
+      let porcentajeGastado = presupuestoBaseVariable > 0 ? (totalGastado / presupuestoBaseVariable) * 100 : 0;
+      if (porcentajeGastado > 100) porcentajeGastado = 100;
+      document.getElementById('uiProgressBar').style.width = `${porcentajeGastado}%`;
+
+      // Cálculos de Diario / Semanal
+      const esMesActual = (mesVista === fechaActualReal.getMonth() && anoVista === fechaActualReal.getFullYear());
+      const uiDiario = document.getElementById('uiDiario');
+      const uiSemanal = document.getElementById('uiSemanal');
+      const uiTituloDiario = document.getElementById('uiTituloDiario');
+
+      if (esMesActual) {
+        const ultimoDiaMes = new Date(anoVista, mesVista + 1, 0).getDate();
+        const diasRestantes = (ultimoDiaMes - fechaActualReal.getDate()) + 1;
+        
+        const diarioRecomendado = dineroDisponible > 0 ? (dineroDisponible / diasRestantes) : 0;
+        const semanasRestantes = diasRestantes / 7;
+        const semanalRecomendado = dineroDisponible > 0 ? (dineroDisponible / semanasRestantes) : 0;
+        
+        uiTituloDiario.innerText = "Puedes gastar";
+        uiDiario.innerText = `${diarioRecomendado.toFixed(2).replace('.',',')} € / día`;
+        uiSemanal.innerText = `${semanalRecomendado.toFixed(2).replace('.',',')} € / semana`;
+      } else {
+        uiTituloDiario.innerText = "Balance Final";
+        uiDiario.innerText = `${dineroDisponible.toFixed(2).replace('.',',')} €`;
+        uiSemanal.innerText = dineroDisponible >= 0 ? "Mes en positivo" : "Exceso de gasto";
+      }
+
+      // Renderizar Listas en otras pestañas
+      document.getElementById('inputAhorro').value = state.ahorro || '';
+      renderLista(state.ingresosList, 'listaIngresos', 'ingreso');
+      renderLista(state.gastosFijosList, 'listaGastosFijos', 'fijo');
+      renderHistorial(gastosDelMes);
+    }
+
+    function renderLista(lista, containerId, tipo) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      lista.forEach(item => {
+        container.innerHTML += `
+          <div class="item-row">
+            <span style="font-weight:600; font-size:14px;">${item.nombre}</span>
+            <div style="text-align:right;">
+              <span style="font-weight:700;">${item.monto.toFixed(2)} €</span>
+              <div class="actions">
+                <button class="action-btn" onclick="borrarItem('${tipo}', ${item.id})">🗑️</button>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    function renderHistorial(gastosDelMes) {
+      const container = document.getElementById('listaGastos');
+      container.innerHTML = '';
+      if(gastosDelMes.length === 0) container.innerHTML = '<p style="text-align:center; color:#888; font-size:13px;">Sin movimientos.</p>';
+      
+      gastosDelMes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).forEach((gasto) => {
+        const diaGasto = new Date(gasto.fecha).getDate();
+        container.innerHTML += `
+          <div class="item-row">
+            <div>
+              <div style="font-size:10px; color:#888; margin-bottom:2px;">Día ${diaGasto}</div>
+              <div style="font-weight:600; font-size:14px;">${gasto.nota}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;">-${gasto.monto.toFixed(2)} €</div>
+              <button class="action-btn" onclick="borrarItem('gasto', ${gasto.id})">🗑️</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    // EVENTOS FORMULARIOS
+    document.getElementById('formIngreso').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.ingresosList.push({ id: Date.now(), nombre: document.getElementById('nombreIngreso').value, monto: parseFloat(document.getElementById('montoIngreso').value) });
+      e.target.reset(); saveState();
+    });
+
+    document.getElementById('formFijo').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.gastosFijosList.push({ id: Date.now(), nombre: document.getElementById('nombreFijo').value, monto: parseFloat(document.getElementById('montoFijo').value) });
+      e.target.reset(); saveState();
+    });
+
+    document.getElementById('formGasto').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const monto = parseFloat(document.getElementById('gastoMonto').value);
+      const fechaInput = document.getElementById('gastoFecha').value; 
+      if (monto) {
+        state.gastos.push({ id: Date.now(), monto, nota: document.getElementById('gastoNota').value, fecha: (fechaInput ? new Date(fechaInput) : new Date()).toISOString() });
+        e.target.reset();
+        document.getElementById('gastoFecha').valueAsDate = new Date(fechaInput);
+        saveState();
+      }
+    });
+
+    function guardarAhorro() {
+      state.ahorro = parseFloat(document.getElementById('inputAhorro').value) || 0;
+      saveState();
+    }
+
+    function borrarItem(tipo, id) {
+      if(confirm('¿Borrar registro?')) {
+        if(tipo === 'ingreso') state.ingresosList = state.ingresosList.filter(i => i.id !== id);
+        if(tipo === 'fijo') state.gastosFijosList = state.gastosFijosList.filter(i => i.id !== id);
+        if(tipo === 'gasto') state.gastos = state.gastos.filter(i => i.id !== id);
+        saveState();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
+
+```
